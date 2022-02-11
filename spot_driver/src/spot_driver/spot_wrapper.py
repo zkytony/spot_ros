@@ -206,7 +206,12 @@ class AsyncIdle(AsyncPeriodicQuery):
 
 class SpotWrapper():
     """Generic wrapper class to encompass release 1.1.4 API features as well as maintaining leases automatically"""
-    def __init__(self, username, password, hostname, logger, estop_timeout=9.0, rates = {}, callbacks = {}):
+    def __init__(self, username, password, hostname, logger, estop_timeout=9.0, rates = {}, callbacks = {}, cameras_used=[]):
+        """
+        Custom paramters (zkytony):
+           camera_used (list): a list of strings among "front", "side", "rear" for which we will call image services.
+               If empty, then no image service will be called here.
+        """
         self._username = username
         self._password = password
         self._hostname = hostname
@@ -230,16 +235,22 @@ class SpotWrapper():
         self._last_velocity_command_time = None
 
         self._front_image_requests = []
-        for source in front_image_sources:
-            self._front_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
-
         self._side_image_requests = []
-        for source in side_image_sources:
-            self._side_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
-
         self._rear_image_requests = []
-        for source in rear_image_sources:
-            self._rear_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
+
+        self._cameras_used = cameras_used
+
+        if "front" in cameras_used:
+            for source in front_image_sources:
+                self._front_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
+
+        if "side" in cameras_used:
+            for source in side_image_sources:
+                self._side_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
+
+        if "rear" in cameras_used:
+            for source in rear_image_sources:
+                self._rear_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
 
         try:
             self._sdk = create_standard_sdk('ros_spot')
@@ -286,15 +297,25 @@ class SpotWrapper():
             self._robot_state_task = AsyncRobotState(self._robot_state_client, self._logger, max(0.0, self._rates.get("robot_state", 0.0)), self._callbacks.get("robot_state", lambda:None))
             self._robot_metrics_task = AsyncMetrics(self._robot_state_client, self._logger, max(0.0, self._rates.get("metrics", 0.0)), self._callbacks.get("metrics", lambda:None))
             self._lease_task = AsyncLease(self._lease_client, self._logger, max(0.0, self._rates.get("lease", 0.0)), self._callbacks.get("lease", lambda:None))
-            self._front_image_task = AsyncImageService(self._image_client, self._logger, max(0.0, self._rates.get("front_image", 0.0)), self._callbacks.get("front_image", lambda:None), self._front_image_requests)
-            self._side_image_task = AsyncImageService(self._image_client, self._logger, max(0.0, self._rates.get("side_image", 0.0)), self._callbacks.get("side_image", lambda:None), self._side_image_requests)
-            self._rear_image_task = AsyncImageService(self._image_client, self._logger, max(0.0, self._rates.get("rear_image", 0.0)), self._callbacks.get("rear_image", lambda:None), self._rear_image_requests)
+
+            if "front" in self._cameras_used:
+                self._front_image_task = AsyncImageService(self._image_client, self._logger, max(0.0, self._rates.get("front_image", 0.0)), self._callbacks.get("front_image", lambda:None), self._front_image_requests)
+            if "side" in self._cameras_used:
+                self._side_image_task = AsyncImageService(self._image_client, self._logger, max(0.0, self._rates.get("side_image", 0.0)), self._callbacks.get("side_image", lambda:None), self._side_image_requests)
+            if "rear" in self._cameras_used:
+                self._rear_image_task = AsyncImageService(self._image_client, self._logger, max(0.0, self._rates.get("rear_image", 0.0)), self._callbacks.get("rear_image", lambda:None), self._rear_image_requests)
             self._idle_task = AsyncIdle(self._robot_command_client, self._logger, 10.0, self)
 
             self._estop_endpoint = None
 
-            self._async_tasks = AsyncTasks(
-                [self._robot_state_task, self._robot_metrics_task, self._lease_task, self._front_image_task, self._side_image_task, self._rear_image_task, self._idle_task])
+            tasks = [self._robot_state_task, self._robot_metrics_task, self._lease_task, self._idle_task]
+            if "front" in self._cameras_used:
+                tasks.append(self._front_image_task)
+            if "side" in self._cameras_used:
+                tasks.append(self._side_image_task)
+            if "rear" in self._cameras_used:
+                tasks.append(self._rear_image_task)
+            self._async_tasks = AsyncTasks(tasks)
 
             self._robot_id = None
             self._lease = None

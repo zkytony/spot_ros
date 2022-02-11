@@ -517,10 +517,15 @@ class SpotROS():
             rospy.logerr('rosparam \'~mode_parent_odom_tf\' should be \'odom\' or \'vision\'.')
             return
 
+        # Custom configuration: cameras used
+        self.cameras_used = rospy.get_param("~cameras_used", [])
+
         self.logger = logging.getLogger('rosout')
 
         rospy.loginfo("Starting ROS driver for Spot")
-        self.spot_wrapper = SpotWrapper(self.username, self.password, self.hostname, self.logger, self.estop_timeout, self.rates, self.callbacks)
+        self.spot_wrapper = SpotWrapper(self.username, self.password, self.hostname,
+                                        self.logger, self.estop_timeout, self.rates, self.callbacks,
+                                        cameras_used=self.cameras_used)
 
         if self.spot_wrapper.is_valid:
             # Images #
