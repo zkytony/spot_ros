@@ -103,19 +103,18 @@ def populateTransformStamped(time, parent_frame, child_frame, transform):
 
     return new_tf
 
-def getImageMsg(data, spot_wrapper):
-    """Takes the imag and  camera data and populates the necessary ROS messages
+def _getImageMsg(data, local_time):
+    """Helper message for getImageMsg; more user friendly
 
     Args:
         data: Image proto
-        spot_wrapper: A SpotWrapper object
+        spot_wrapper: Timestamp proto
     Returns:
         (tuple):
             * Image: message of the image captured
             * CameraInfo: message to define the state and config of the camera that took the image
     """
     image_msg = Image()
-    local_time = spot_wrapper.robotToLocalTime(data.shot.acquisition_time)
     image_msg.header.stamp = rospy.Time(local_time.seconds, local_time.nanos)
     image_msg.header.frame_id = data.shot.frame_name_image_sensor
     image_msg.height = data.shot.image.rows
@@ -160,7 +159,6 @@ def getImageMsg(data, spot_wrapper):
             image_msg.data = data.shot.image.data
 
     camera_info_msg = DefaultCameraInfo()
-    local_time = spot_wrapper.robotToLocalTime(data.shot.acquisition_time)
     camera_info_msg.header.stamp = rospy.Time(local_time.seconds, local_time.nanos)
     camera_info_msg.header.frame_id = data.shot.frame_name_image_sensor
     camera_info_msg.height = data.shot.image.rows
@@ -177,6 +175,19 @@ def getImageMsg(data, spot_wrapper):
     camera_info_msg.P[6] = data.source.pinhole.intrinsics.principal_point.y
 
     return image_msg, camera_info_msg
+
+def getImageMsg(data, spot_wrapper):
+    """
+    Args:
+        data: Image proto
+        spot_wrapper: A SpotWrapper object
+    Returns:
+        (tuple):
+            * Image: message of the image captured
+            * CameraInfo: message to define the state and config of the camera that took the image
+    """
+    local_time = spot_wrapper.robotToLocalTime(data.shot.acquisition_time)
+    return _getImageMsg(data, local_time)
 
 def GetJointStatesFromState(state, spot_wrapper):
     """Maps joint state data from robot state proto to ROS JointState message
