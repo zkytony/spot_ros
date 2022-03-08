@@ -612,9 +612,12 @@ class SpotROS():
             self.auto_claim = rospy.get_param('~auto_claim', False)
             self.auto_power_on = rospy.get_param('~auto_power_on', False)
             self.auto_stand = rospy.get_param('~auto_stand', False)
+            self.take_lease = rospy.get_param('~take_lease', False)  # 'take' instead of 'acquire' the lease
 
             if self.auto_claim:
-                self.spot_wrapper.claim()
+                rospy.loginfo("Claiming lease ({})"
+                              .format("take" if self.take_lease else "acquire"))
+                self.spot_wrapper.claim(take_lease=self.take_lease)
                 if self.auto_power_on:
                     self.spot_wrapper.power_on()
                     if self.auto_stand:

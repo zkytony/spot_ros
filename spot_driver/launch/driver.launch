@@ -8,6 +8,7 @@
   <arg name="auto_claim" default="false"/>
   <arg name="auto_power_on" default="false"/>
   <arg name="auto_stand" default="false"/>
+  <arg name="take_lease" default="false"/>
 
   <!-- Valid values: front, side, rear -->
   <arg name="cameras_used" default="[]" />
@@ -26,6 +27,7 @@
     <param name="auto_claim"    value="$(arg auto_claim)"/>
     <param name="auto_power_on" value="$(arg auto_power_on)"/>
     <param name="auto_stand"    value="$(arg auto_stand)"/>
+    <param name="take_lease"    value="$(arg take_lease)"/>
     <param name="username" value="$(arg username)" />
     <param name="password" value="$(arg password)" />
     <param name="hostname" value="$(arg hostname)" />

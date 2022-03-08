@@ -424,11 +424,11 @@ class SpotWrapper():
 
         return rtime
 
-    def claim(self):
+    def claim(self, take_lease=False):
         """Get a lease for the robot, a handle on the estop endpoint, and the ID of the robot."""
         try:
             self._robot_id = self._robot.get_id()
-            self.getLease()
+            self.getLease(take_lease=take_lease)
             self.resetEStop()
             return True, "Success"
         except (ResponseError, RpcError) as err:
@@ -480,9 +480,12 @@ class SpotWrapper():
             self._estop_keepalive = None
             self._estop_endpoint = None
 
-    def getLease(self):
+    def getLease(self, take_lease=False):
         """Get a lease for the robot and keep the lease alive automatically."""
-        self._lease = self._lease_client.acquire()
+        if take_lease:
+            self._lease = self._lease_client.take()
+        else:
+            self._lease = self._lease_client.acquire()
         self._lease_keepalive = LeaseKeepAlive(self._lease_client)
 
     def releaseLease(self):
