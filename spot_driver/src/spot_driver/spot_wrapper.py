@@ -9,10 +9,12 @@ from bosdyn.client.robot_state import RobotStateClient
 from bosdyn.client.robot_command import RobotCommandClient, RobotCommandBuilder
 from bosdyn.client.graph_nav import GraphNavClient
 from bosdyn.client.frame_helpers import get_odom_tform_body
+from bosdyn.client.frame_helpers import *
 from bosdyn.client.power import safe_power_off, PowerClient, power_on
 from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
 from bosdyn.client.image import ImageClient, build_image_request
 from bosdyn.api import image_pb2
+from bosdyn.api import geometry_pb2
 from bosdyn.api.graph_nav import graph_nav_pb2
 from bosdyn.api.graph_nav import map_pb2
 from bosdyn.api.graph_nav import nav_pb2
@@ -580,6 +582,40 @@ class SpotWrapper():
         """Get mobility params
         """
         return self._mobility_params
+
+    def arm_pose_cmd(self, x, y, z, qx, qy, qz, qw):
+
+        # Make the arm pose RobotCommand
+        # Build a position to move the arm to (in meters, relative to and expressed in the gravity aligned body frame).
+        hand_ewrt_flat_body = geometry_pb2.Vec3(x=x, y=y, z=z)
+
+        # Rotation as a quaternion
+        flat_body_Q_hand = geometry_pb2.Quaternion(w=qw, x=qx, y=qy, z=qz)
+
+        flat_body_T_hand = geometry_pb2.SE3Pose(position=hand_ewrt_flat_body,
+                                                rotation=flat_body_Q_hand)
+
+        robot_state = self._robot_state_client.get_robot_state()
+        odom_T_flat_body = get_a_tform_b(robot_state.kinematic_state.transforms_snapshot,
+                                         ODOM_FRAME_NAME, GRAV_ALIGNED_BODY_FRAME_NAME)
+
+        odom_T_hand = odom_T_flat_body * math_helpers.SE3Pose.from_obj(flat_body_T_hand)
+
+        # duration in seconds
+        seconds = 2
+
+        arm_command = RobotCommandBuilder.arm_pose_command(
+            odom_T_hand.x, odom_T_hand.y, odom_T_hand.z, odom_T_hand.rot.w, odom_T_hand.rot.x,
+            odom_T_hand.rot.y, odom_T_hand.rot.z, ODOM_FRAME_NAME, seconds)
+
+        # Make the open gripper RobotCommand
+        gripper_command = RobotCommandBuilder.claw_gripper_open_fraction_command(1.0)
+
+        # Combine the arm and gripper commands into one RobotCommand
+        command = RobotCommandBuilder.build_synchro_command(gripper_command, arm_command)
+
+        # Send the request
+        cmd_id = self._robot_command(command)
 
     def velocity_cmd(self, v_x, v_y, v_rot, cmd_duration=0.125):
         """Send a velocity motion command to the robot.

@@ -417,6 +417,18 @@ class SpotROS():
         mobility_params.body_control.CopyFrom(body_control)
         self.spot_wrapper.set_mobility_params(mobility_params)
 
+    def armPoseCallback(self, data):
+        pos_x = data.position.x
+        pos_y = data.position.y
+        pos_z = data.position.z
+
+        quat_x = data.orientation.x
+        quat_y = data.orientation.y 
+        quat_z = data.orientation.z 
+        quat_w = data.orientation.w 
+
+        self.spot_wrapper.arm_pose_cmd(pos_x,pos_y,pos_z,quat_x,quat_y,quat_z,quat_w)
+
     def handle_list_graph(self, upload_path):
         """ROS service handler for listing graph_nav waypoint_ids"""
         resp = self.spot_wrapper.list_graph(upload_path)
@@ -576,6 +588,9 @@ class SpotROS():
 
             rospy.Subscriber('cmd_vel', Twist, self.cmdVelCallback, queue_size = 1)
             rospy.Subscriber('body_pose', Pose, self.bodyPoseCallback, queue_size = 1)
+
+            #Topics for controlling spot arm
+            rospy.Subscriber('arm_pose', Pose, self.armPoseCallback, queue_size = 1)
 
             rospy.Service("claim", Trigger, self.handle_claim)
             rospy.Service("release", Trigger, self.handle_release)
