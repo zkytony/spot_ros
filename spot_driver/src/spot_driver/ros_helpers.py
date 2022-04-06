@@ -39,6 +39,17 @@ friendly_joint_names["hr.hx"] = "rear_right_hip_x"
 friendly_joint_names["hr.hy"] = "rear_right_hip_y"
 friendly_joint_names["hr.kn"] = "rear_right_knee"
 
+
+#Adding arm friendly joint names
+friendly_joint_names["arm0.sh0"] = "arm_shoulder_0"
+friendly_joint_names["arm0.sh1"] = "arm_shoulder_1"
+friendly_joint_names["arm0.hr0"] = "arm_humerus_0"
+friendly_joint_names["arm0.el0"] = "arm_elbow_0"
+friendly_joint_names["arm0.el1"] = "arm_elbow_1"
+friendly_joint_names["arm0.wr0"] = "arm_wrist_0"
+friendly_joint_names["arm0.wr1"] = "arm_wrist_1"
+friendly_joint_names["arm0.f1x"] = "arm_f1x"
+
 class DefaultCameraInfo(CameraInfo):
     """Blank class extending CameraInfo ROS topic that defaults most parameters"""
     def __init__(self):
