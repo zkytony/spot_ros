@@ -263,7 +263,7 @@
         <limit effort="1000" velocity="1000.00" lower="-2.7929" upper="-0.257725" />
     </joint>
 
-        <!-- Arm addition to XACRO -->
+  <!-- Arm addition to XACRO -->
 
   <!-- begin arm -->
   <link name="arm0.link_sh0">

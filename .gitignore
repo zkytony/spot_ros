@@ -1,1 +1,3 @@
 *.pyc
+spot_description/spot/meshes
+spot_description/spot/meshes.meta
